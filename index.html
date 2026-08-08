@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<title>AIで、平均点を取らない。｜GREEN通商 AI SHARING SESSION</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Kaisei+Opti:wght@400;500;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+
+/* ==========================================================================
+   GREEN通商 AI SHARING SESSION — 発表用スクロールページ
+   「AIで、平均点を取らない。」
+   一枚の紙の雑誌特集をめくっていくイメージ。全編、単一の紙世界(生成り紙)で統一。
+   ========================================================================== */
+
+:root{
+  --paper:      #F6F1E3;   /* 生成り紙 */
+  --paper-tint: #FBF6EA;   /* 濃色背景の上で使う紙色寄りの白 */
+  --ink:        #211B15;   /* 濃いチャコール */
+  --ink-soft:   #5B4E3E;   /* 本文用の少し薄いインク */
+  --ink-faint:  rgba(33,27,21,.42);
+  --red:        #DE4726;   /* オレンジ寄りの赤(メイン) */
+  --red-deep:   #A9351B;
+  --sky:        #5FB3C7;   /* 水色(アクセント) */
+  --yellow:     #E4A924;   /* からし色寄りの黄(アクセント) */
+  --line:       rgba(33,27,21,.16);
+  --line-strong:rgba(33,27,21,.32);
+
+  --font-jp:    'Zen Kaku Gothic New', sans-serif;
+  --font-accent:'Kaisei Opti', serif;
+  --font-en:    'Josefin Sans', sans-serif;
+
+  --fs-hero-sm: clamp(2.6rem, 12vw, 6rem);
+  --fs-hero-lg: clamp(3.4rem, 16vw, 9.5rem);
+  --fs-h1:      clamp(2.1rem, 7.4vw, 4.6rem);
+  --fs-h2:      clamp(1.5rem, 5vw, 2.6rem);
+  --fs-num:     clamp(6rem, 34vw, 19rem);
+  --fs-body:    clamp(1.02rem, 1.9vw, 1.22rem);
+  --fs-eyebrow: 0.78rem;
+
+  --pad-side: clamp(1.5rem, 6vw, 5rem);
+}
+
+*{ box-sizing:border-box; }
+html{ font-size:17px; scroll-behavior:smooth; }
+@media (prefers-reduced-motion: reduce){ html{ scroll-behavior:auto; } }
+
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--font-jp);
+  font-size:var(--fs-body);
+  line-height:1.9;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+h1,h2,h3,p{ margin:0; }
+::selection{ background:var(--ink); color:var(--paper); }
+
+/* 改行の出し分け: PC/SPそれぞれで意図した位置に折り返す */
+.lb-pc{ display:none; }
+.lb-sp{ display:inline; }
+@media (min-width:900px){
+  .lb-pc{ display:inline; }
+  .lb-sp{ display:none; }
+}
+
+/* ---- 進行バー(演出でなく発表の残り時間の目安として機能) ---- */
+#progress{
+  position:fixed; top:0; left:0; height:3px; width:0%;
+  background:var(--ink); z-index:200;
+  mix-blend-mode:difference;
+  transition:width .08s linear;
+}
+:root{ filter:none; }
+#progress{ background:#fff; }
+
+/* ---- 誌面の折丁ノンブル(各セクション共通の版面デバイス) ---- */
+.folio{
+  position:absolute; left:var(--pad-side); right:var(--pad-side); bottom:1.6rem;
+  display:flex; justify-content:space-between; align-items:flex-end;
+  font-family:var(--font-en); font-size:var(--fs-eyebrow);
+  letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-faint);
+  pointer-events:none;
+  white-space:nowrap;
+}
+.folio span:first-child{ font-weight:600; }
+.sec--on-color .folio{ color:rgba(251,246,234,.62); }
+.folio .full{ display:none; }
+.folio .short{ display:inline; }
+@media (min-width:640px){
+  .folio .full{ display:inline; }
+  .folio .short{ display:none; }
+}
+@media (max-width:639px){
+  .folio{ font-size:.66rem; letter-spacing:.08em; bottom:1.2rem; }
+}
+
+/* ---- 汎用セクション ---- */
+.sec{
+  position:relative;
+  width:100%;
+  padding:6.5rem var(--pad-side) 5rem;
+  display:flex; flex-direction:column;
+  justify-content:center;
+  min-height:100vh;
+  border-top:1px solid var(--line);
+}
+.sec--tall{ min-height:130vh; }
+.sec--quiet{ min-height:100vh; justify-content:center; }
+.sec--on-color{ border-top:none; color:var(--paper-tint); }
+
+.eyebrow{
+  font-family:var(--font-en); font-size:var(--fs-eyebrow);
+  letter-spacing:.18em; text-transform:uppercase;
+  color:var(--ink-faint); margin-bottom:1.4rem;
+}
+.sec--on-color .eyebrow{ color:rgba(251,246,234,.7); }
+
+/* ---- スクロール出現 ---- */
+.reveal{
+  opacity:0; transform:translateY(28px);
+  transition:opacity .8s cubic-bezier(.2,.7,.2,1), transform .8s cubic-bezier(.2,.7,.2,1);
+  transition-delay:var(--d,0s);
+}
+.reveal.is-in{ opacity:1; transform:translateY(0); }
+@media (prefers-reduced-motion: reduce){
+  .reveal{ transition:none; opacity:1; transform:none; }
+}
+
+/* ==========================================================================
+   01 — FV
+   ========================================================================== */
+.sec-01{
+  border-top:none;
+  min-height:100svh;
+  justify-content:space-between;
+  padding-top:2.4rem;
+}
+.fv-top{
+  display:flex; justify-content:space-between; align-items:flex-start;
+  font-family:var(--font-en); font-size:var(--fs-eyebrow);
+  letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint);
+}
+.fv-top .mark{
+  width:10px; height:10px; border:1.4px solid var(--ink-faint); border-radius:50%;
+}
+.fv-main{ margin:auto 0; padding:2.4rem 0; }
+.fv-headline{
+  font-weight:900; letter-spacing:-.01em;
+  line-height:1.08;
+}
+.fv-headline .l1{ font-size:var(--fs-hero-sm); display:block; }
+.fv-headline .l2{
+  font-size:var(--fs-hero-lg); display:block; color:var(--red);
+  margin-top:.06em;
+}
+.fv-sub{
+  font-family:var(--font-accent); font-weight:500;
+  font-size:clamp(1.05rem,3vw,1.55rem);
+  line-height:1.7; color:var(--ink-soft);
+  margin-top:2.2rem; max-width:26em;
+}
+.fv-bottom{
+  display:flex; justify-content:space-between; align-items:flex-end;
+  font-family:var(--font-en); font-size:.82rem; letter-spacing:.1em;
+  color:var(--ink-faint);
+}
+.fv-scroll{ display:flex; flex-direction:column; align-items:center; gap:.6rem; }
+.fv-scroll .stem{ width:1px; height:34px; background:var(--line-strong); overflow:hidden; position:relative; }
+.fv-scroll .stem::after{
+  content:''; position:absolute; left:0; top:-100%; width:100%; height:100%;
+  background:var(--ink); animation:scrollDrop 1.8s ease-in-out infinite;
+}
+@keyframes scrollDrop{ to{ top:100%; } }
+@media (prefers-reduced-motion: reduce){ .fv-scroll .stem::after{ animation:none; top:0; } }
+
+/* ==========================================================================
+   02 — うちのAI活用、まだスタートほやほや。
+   ========================================================================== */
+.sec-02 .head{ max-width:16em; }
+.h1{ font-weight:900; font-size:var(--fs-h1); line-height:1.22; text-wrap:balance; }
+.body-col{
+  margin-top:1.8rem; max-width:30em;
+  font-size:var(--fs-body); color:var(--ink-soft); line-height:2;
+}
+.uses{
+  margin-top:4rem; display:flex; flex-direction:column;
+}
+.use-row{
+  display:flex; align-items:baseline; gap:clamp(1rem,4vw,2.4rem);
+  padding:1.5rem 0; border-top:1px solid var(--line);
+}
+.use-row:last-child{ border-bottom:1px solid var(--line); }
+.use-num{ font-family:var(--font-en); font-size:.9rem; color:var(--ink-faint); width:1.6em; flex:none; }
+.use-en{ font-family:var(--font-en); font-weight:700; font-size:clamp(2rem,7vw,4rem); letter-spacing:.01em; flex:none; }
+.use-jp{ font-size:.95rem; color:var(--ink-soft); }
+
+/* ==========================================================================
+   03 — 作れるようになった。だからこそ、問題がある。
+   ========================================================================== */
+.sec-03{ min-height:130vh; }
+.beat{ margin-bottom:3.4rem; }
+.beat .h1{ display:inline-block; }
+.prompts{
+  margin:3rem 0 3rem; display:flex; flex-direction:column; gap:.9rem;
+  max-width:30em;
+}
+.prompt-line{
+  font-family:var(--font-accent); font-size:clamp(1rem,2.6vw,1.3rem);
+  color:var(--ink-soft);
+}
+.prompt-line span{ color:var(--ink-faint); }
+.plain-list{
+  display:flex; gap:1.4rem; flex-wrap:wrap;
+  font-size:clamp(1.1rem,3vw,1.5rem); color:var(--ink-soft); margin:0;
+  margin-bottom:2.6rem;
+}
+.punch{
+  font-weight:900; font-size:clamp(2.2rem,8vw,4.4rem);
+  color:var(--red); line-height:1.2; text-wrap:balance;
+}
+
+/* ==========================================================================
+   04 — AIは、平均点を取るのがうまい。
+   ========================================================================== */
+.sec-04{ min-height:190vh; padding-top:6.5rem; }
+.sticky-stage{
+  position:sticky; top:0; height:100vh;
+  display:flex; align-items:center; justify-content:center;
+  pointer-events:none;
+}
+.big-numbers{
+  display:flex; gap:clamp(1rem,5vw,3rem);
+  font-family:var(--font-en); font-weight:700;
+  color:transparent;
+  -webkit-text-stroke:1.6px var(--ink-faint);
+  font-size:var(--fs-num); line-height:1;
+}
+.sec04-copy{ margin-top:-58vh; position:relative; z-index:2; }
+.sec04-copy .h1{ margin-bottom:2.2rem; }
+.sec04-copy .body-col{ margin-bottom:1.6rem; }
+.sec04-copy .punch2{
+  font-weight:900; font-size:clamp(1.8rem,6vw,3.2rem); line-height:1.3;
+  max-width:14em; margin-top:2.4rem;
+}
+
+/* ==========================================================================
+   05 — SPEED UP ≠ AVERAGE (フルカラー反転)
+   ========================================================================== */
+.sec-05{
+  background:var(--red); color:var(--paper-tint);
+  align-items:center; text-align:center; min-height:100vh;
+}
+.eq-stack{ display:flex; flex-direction:column; align-items:center; gap:.2em; }
+.eq-word{
+  font-family:var(--font-en); font-weight:700; letter-spacing:.02em;
+  font-size:clamp(2.6rem,13vw,7.6rem); line-height:1;
+}
+.eq-symbol{
+  font-family:var(--font-en); font-weight:300;
+  font-size:clamp(2rem,7vw,4rem); opacity:.85; margin:.1em 0;
+}
+.eq-body{
+  margin-top:3rem; max-width:24em; font-size:var(--fs-body);
+  color:rgba(251,246,234,.86); line-height:2;
+}
+.eq-body strong{ display:block; font-weight:700; color:var(--paper-tint); margin:.4em 0; }
+
+/* ==========================================================================
+   06 — 「らしさ」を渡す。
+   ========================================================================== */
+.sec-06 .head{ max-width:18em; }
+.kw-wrap{ margin:3rem 0 3.5rem; }
+.kw{
+  font-family:var(--font-accent); font-weight:700;
+  font-size:clamp(3.6rem,17vw,10rem); line-height:1;
+  position:relative; display:inline-block;
+}
+.kw::after{
+  content:''; position:absolute; left:.02em; right:.06em; bottom:.06em; height:.09em;
+  background:var(--sky); z-index:-1; opacity:.55;
+}
+.rashisa-list{ display:flex; flex-direction:column; max-width:28em; }
+.rashisa-list .row{
+  padding:1.1rem 0; border-top:1px solid var(--line);
+  font-size:clamp(1.05rem,2.8vw,1.35rem);
+}
+.rashisa-list .row:last-child{ border-bottom:1px solid var(--line); }
+.sec-06 .close{ margin-top:2.6rem; max-width:26em; color:var(--ink-soft); }
+.sec-06 .close b{ color:var(--ink); font-weight:700; }
+
+/* ==========================================================================
+   07 — 索引ページ(DESIGN / WORDS / DON'T / BRAND)
+   ========================================================================== */
+.sec-07 .head{ max-width:20em; margin-bottom:3.4rem; }
+.index-grid{
+  display:grid; grid-template-columns:1fr; gap:0;
+  border-top:1px solid var(--line-strong);
+}
+.index-cell{
+  padding:2.2rem 0; border-bottom:1px solid var(--line);
+  display:grid; grid-template-columns:1fr; gap:.9rem;
+}
+.index-en{
+  font-family:var(--font-en); font-weight:700; letter-spacing:.03em;
+  font-size:clamp(1.8rem,7vw,2.8rem);
+}
+.index-items{ display:flex; flex-direction:column; gap:.5rem; color:var(--ink-soft); }
+.index-items span{ font-size:.98rem; }
+.index-items span::before{ content:'— '; color:var(--ink-faint); }
+.index-cell.dont .index-items span::before{ content:'× '; color:var(--red-deep); }
+@media (min-width:900px){
+  .index-grid{ grid-template-columns:1fr 1fr; }
+  .index-cell{ padding:3rem clamp(1rem,3vw,3rem) 3rem 0; grid-template-columns:.9fr 1.6fr; align-items:start; }
+  .index-cell:nth-child(odd){ border-right:1px solid var(--line-strong); }
+}
+
+/* ==========================================================================
+   08 — テンプレートの考え方(対比)
+   ========================================================================== */
+.sec-08 .stack{ display:flex; flex-direction:column; gap:.3em; margin-bottom:1.6rem; }
+.sec-08 .h1.demphasis{ color:var(--ink-faint); font-weight:700; }
+.sec-08 .h1.emphasis{ color:var(--red); }
+.compare{
+  margin-top:3.2rem; display:grid; grid-template-columns:1fr; gap:2.4rem;
+}
+.compare-col{ padding-top:1.4rem; border-top:1px solid var(--line-strong); }
+.compare-col .tag{
+  font-family:var(--font-en); font-size:var(--fs-eyebrow); letter-spacing:.14em;
+  text-transform:uppercase; margin-bottom:.9rem; display:block;
+}
+.compare-col.a .tag{ color:var(--ink-faint); }
+.compare-col.b .tag{ color:var(--red-deep); }
+.compare-col.a p{ color:var(--ink-faint); font-size:var(--fs-body); line-height:1.95; }
+.compare-col.b p{ color:var(--ink); font-weight:500; font-size:var(--fs-body); line-height:1.95; }
+@media (min-width:900px){
+  .compare{ grid-template-columns:1fr 1fr; gap:4rem; }
+}
+
+/* ==========================================================================
+   09 — 完成したら、終わりじゃない。
+   ========================================================================== */
+.version-row{
+  display:flex; align-items:center; gap:clamp(1rem,4vw,2.2rem);
+  margin:3rem 0 3.2rem; flex-wrap:wrap;
+}
+.version-row .v{
+  font-family:var(--font-en); font-weight:700;
+  font-size:clamp(2.2rem,8vw,4.2rem); color:var(--ink-faint);
+}
+.version-row .v.current{ color:var(--ink); }
+.version-row .arrow{ font-size:clamp(1.4rem,4vw,2rem); color:var(--ink-faint); }
+.sec-09 .close{ max-width:20em; }
+.sec-09 .close .h2{ font-weight:500; color:var(--ink-soft); margin-bottom:.3em; }
+.sec-09 .close .kicker{
+  font-weight:900; font-size:clamp(1.9rem,6.4vw,3.4rem); line-height:1.35;
+}
+.sec-09 .close .kicker u{
+  text-decoration:none; box-shadow:inset 0 -.32em 0 rgba(95,179,199,.55);
+}
+
+/* ==========================================================================
+   10 — 誰にも響かないものはいらない。(最も静か)
+   ========================================================================== */
+.sec-10{ min-height:130vh; }
+.quiet-head{ font-weight:900; font-size:var(--fs-h1); line-height:1.3; max-width:14em; }
+.quiet-lines{ margin-top:5rem; display:flex; flex-direction:column; gap:2.4rem; max-width:22em; }
+.quiet-lines p{ font-size:clamp(1.1rem,2.8vw,1.4rem); color:var(--ink-soft); }
+.quiet-emph{ margin-top:2.6rem; font-family:var(--font-accent); font-size:clamp(1.3rem,3.6vw,1.9rem); color:var(--ink); }
+.quiet-final{ margin-top:3rem; max-width:24em; color:var(--ink-soft); font-size:var(--fs-body); line-height:2.1; }
+
+/* ==========================================================================
+   11 — 今、作りたいアプリがあります。
+   ========================================================================== */
+.sec-11{ min-height:150vh; }
+.sec-11 .close{ margin-top:2.6rem; max-width:26em; color:var(--ink-soft); }
+.sec-11 .close b{ color:var(--ink); font-weight:700; }
+
+/* ==========================================================================
+   12 — ラスト前(静寂)
+   ========================================================================== */
+.sec-12{ min-height:170vh; justify-content:space-between; padding:9rem var(--pad-side); }
+.pause-a, .pause-b{ font-weight:900; font-size:var(--fs-h1); line-height:1.3; max-width:13em; text-wrap:balance; }
+.pause-b{ align-self:flex-end; text-align:right; color:var(--red); }
+
+/* ==========================================================================
+   13 — 種明かし
+   ========================================================================== */
+.sec-13{ border-top:1px solid var(--line); padding:0; min-height:auto; display:block; }
+.reveal-block{ padding:9rem var(--pad-side); position:relative; }
+.reveal-a{ min-height:70vh; display:flex; align-items:center; }
+.reveal-a p{ font-family:var(--font-accent); font-size:clamp(1.3rem,4vw,2rem); color:var(--ink-soft); }
+.reveal-b{
+  background:var(--yellow); color:var(--ink); min-height:100vh;
+  display:flex; flex-direction:column; justify-content:center; align-items:flex-start;
+}
+.reveal-b .big{
+  font-weight:900; font-size:clamp(3rem,13vw,7.6rem); line-height:1.14; text-wrap:balance;
+}
+.allai{
+  margin-top:2.8rem; font-family:var(--font-en); font-weight:700;
+  font-size:clamp(2.6rem,11vw,6.4rem); letter-spacing:.05em;
+}
+.reveal-c{ min-height:60vh; display:flex; align-items:center; }
+.reveal-c p{ font-weight:700; font-size:var(--fs-h2); line-height:1.4; text-wrap:balance; }
+.colophon{
+  min-height:80vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; gap:1.6rem;
+}
+.colophon .final{
+  font-weight:900; font-size:clamp(2.2rem,8vw,4.6rem); line-height:1.25; text-wrap:balance;
+}
+.colophon .brand{
+  font-family:var(--font-en); letter-spacing:.2em; text-transform:uppercase;
+  font-size:.95rem; color:var(--ink-faint);
+}
+
+/* ---- レスポンシブ: 版面の余白をPCで広く ---- */
+@media (min-width:900px){
+  .sec{ padding-left:clamp(3rem,8vw,7rem); padding-right:clamp(3rem,8vw,7rem); }
+}
+
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<!-- ============================== 01 FV ============================== -->
+<section class="sec sec-01">
+  <div class="fv-top">
+    <span>GREEN通商</span>
+    <span class="mark"></span>
+    <span>AI SHARING SESSION</span>
+  </div>
+
+  <div class="fv-main">
+    <h1 class="fv-headline reveal">
+      <span class="l1">AIで、</span>
+      <span class="l2">平均点を<br>取らない。</span>
+    </h1>
+    <p class="fv-sub reveal" style="--d:.25s">
+      「らしさ」までAIに渡す、<br class="lb-sp">
+      GREEN通商の使い方。
+    </p>
+  </div>
+
+  <div class="fv-bottom">
+    <span>2026 SUMMER</span>
+    <div class="fv-scroll"><span>SCROLL</span><div class="stem"></div></div>
+    <span>01 / 13</span>
+  </div>
+</section>
+
+<!-- ============================== 02 ============================== -->
+<section class="sec sec-02">
+  <div class="head">
+    <p class="eyebrow reveal">02 — What We Actually Use</p>
+    <h2 class="h1 reveal">
+      うちのAI活用、<br>
+      まだスタート<br class="lb-sp">ほやほや。
+    </h2>
+  </div>
+  <p class="body-col reveal" style="--d:.15s">
+    GREEN通商で現在AIを使っているのは、主にコーディング、分析、情報整理、提案書作成。<br><br>
+    弊社には、コーディングスタッフが一人だけ。<br><br>
+    今までは、デザインデータと指示書を渡して作ってもらっていました。<br><br>
+    作れる量にも、スピードにも限界がありました。<br><br>
+    今は、3倍、10倍のスピードに。
+  </p>
+
+  <div class="uses">
+    <div class="use-row reveal" style="--d:.1s">
+      <span class="use-num">01</span><span class="use-en">CODING</span><span class="use-jp">コーディング</span>
+    </div>
+    <div class="use-row reveal" style="--d:.18s">
+      <span class="use-num">02</span><span class="use-en">ANALYSIS</span><span class="use-jp">分析</span>
+    </div>
+    <div class="use-row reveal" style="--d:.26s">
+      <span class="use-num">03</span><span class="use-en">ORGANIZE</span><span class="use-jp">情報整理</span>
+    </div>
+  </div>
+  <div class="folio"><span><span class="full">GREEN通商 — AI SHARING SESSION</span><span class="short">GREEN通商</span></span><span>02 / 13</span></div>
+</section>
+
+<!-- ============================== 03 ============================== -->
+<section class="sec sec-03 sec--tall">
+  <p class="eyebrow reveal">03 — The Catch</p>
+
+  <div class="beat">
+    <h2 class="h1 reveal">作れるようになった。</h2>
+  </div>
+  <div class="beat">
+    <h2 class="h1 reveal" style="--d:.1s">だからこそ、<br>問題がある。</h2>
+  </div>
+
+  <div class="prompts">
+    <p class="prompt-line reveal" style="--d:.05s"><span>“</span>おしゃれなページを作って<span>”</span></p>
+    <p class="prompt-line reveal" style="--d:.12s"><span>“</span>売れそうなバナーを作って<span>”</span></p>
+    <p class="prompt-line reveal" style="--d:.19s"><span>“</span>いい感じにまとめて<span>”</span></p>
+  </div>
+
+  <p class="body-col reveal" style="--d:.1s">それなりのものは、簡単に出てきます。</p>
+
+  <div class="plain-list reveal" style="--d:.15s">
+    <span>きれい。</span><span>整っている。</span><span>間違ってはいない。</span>
+  </div>
+
+  <p class="punch reveal" style="--d:.05s">でも、<br>誰にも強く響かない。</p>
+  <div class="folio"><span><span class="full">GREEN通商 — AI SHARING SESSION</span><span class="short">GREEN通商</span></span><span>03 / 13</span></div>
+</section>
+
+<!-- ============================== 04 ============================== -->
+<section class="sec sec-04">
+  <div class="sticky-stage">
+    <div class="big-numbers" aria-hidden="true"><span>50</span><span>60</span></div>
+  </div>
+  <div class="sec04-copy">
+    <p class="eyebrow reveal">04 — Average</p>
+    <h2 class="h1 reveal">AIは、<br>平均点を取るのが<br class="lb-sp">うまい。</h2>
+    <p class="body-col reveal" style="--d:.1s">
+      50点。60点。<br>
+      それっぽいものなら、ものすごい速さで作れる。
+    </p>
+    <p class="body-col reveal" style="--d:.18s">
+      でもAIが普及すれば、その50〜60点は誰でも作れるようになる。
+    </p>
+    <p class="punch2 reveal" style="--d:.1s">
+      「AIで早く作れる」だけでは、<br>もう差にならない。
+    </p>
+  </div>
+  <div class="folio"><span><span class="full">GREEN通商 — AI SHARING SESSION</span><span class="short">GREEN通商</span></span><span>04 / 13</span></div>
+</section>
+
+<!-- ============================== 05 ============================== -->
+<section class="sec sec-05 sec--on-color">
+  <div class="eq-stack reveal">
+    <span class="eq-word">SPEED UP</span>
+    <span class="eq-symbol">≠</span>
+    <span class="eq-word">AVERAGE</span>
+  </div>
+  <div class="eq-body reveal" style="--d:.15s">
+    GREEN通商は、制作スピードを上げたい。
+    <strong>でも、速くするためにクオリティを下げたいわけではない。</strong>
+    みんなと同じ平均点を大量に作っていたら、頭ひとつ飛び出ることはできない。
+  </div>
+  <div class="folio"><span><span class="full">GREEN通商 — AI SHARING SESSION</span><span class="short">GREEN通商</span></span><span>05 / 13</span></div>
+</section>
+
+<!-- ============================== 06 ============================== -->
+<section class="sec sec-06">
+  <div class="head">
+    <p class="eyebrow reveal">06 — What We Hand Over</p>
+    <h2 class="h1 reveal">AIに渡すのは、<br>指示だけじゃない。</h2>
+  </div>
+
+  <div class="kw-wrap reveal" style="--d:.15s">
+    <span class="kw">「らしさ」</span><span style="font-size:clamp(1.2rem,3vw,1.6rem); color:var(--ink-soft); margin-left:.6rem;">を渡す。</span>
+  </div>
+
+  <div class="rashisa-list">
+    <p class="row reveal" style="--d:.05s">GREEN通商らしいページ。</p>
+    <p class="row reveal" style="--d:.1s">かわすいらしいページ。</p>
+    <p class="row reveal" style="--d:.15s">ななぷれらしいページ。</p>
+    <p class="row reveal" style="--d:.2s">その商品らしいページ。</p>
+  </div>
+
+  <p class="close reveal" style="--d:.1s">
+    全部違っていい。むしろ、<b>全部同じAIっぽいページになったら意味がない。</b>
+  </p>
+  <div class="folio"><span><span class="full">GREEN通商 — AI SHARING SESSION</span><span class="short">GREEN通商</span></span><span>06 / 13</span></div>
+</section>
+
+<!-- ============================== 07 ============================== -->
+<section class="sec sec-07">
+  <div class="head">
+    <p class="eyebrow reveal">07 — In Progress</p>
+    <h2 class="h1 reveal">だから今、<br>「らしさ」やマインドを<br class="lb-sp">言語化しています。</h2>
+  </div>
+
+  <div class="index-grid">
+    <div class="index-cell reveal" style="--d:.05s">
+      <span class="index-en">DESIGN</span>
+      <div class="index-items">
+        <span>文字サイズ</span><span>余白</span><span>揃え</span><span>写真の使い方</span><span>フォント</span><span>色</span>
+      </div>
+    </div>
+    <div class="index-cell reveal" style="--d:.1s">
+      <span class="index-en">WORDS</span>
+      <div class="index-items">
+        <span>言葉の選び方</span><span>キャッチコピー</span><span>情報の順番</span><span>誰に話すか</span>
+      </div>
+    </div>
+    <div class="index-cell dont reveal" style="--d:.15s">
+      <span class="index-en">DON'T</span>
+      <div class="index-items">
+        <span>ランキングを大きく占有しない</span><span>何でもカードにしない</span><span>絵文字を使わない</span><span>とりあえずシャドウを入れない</span>
+      </div>
+    </div>
+    <div class="index-cell reveal" style="--d:.2s">
+      <span class="index-en">BRAND</span>
+      <div class="index-items">
+        <span>店舗ごとの世界観</span><span>商品ごとの見せ方</span><span>企画ごとの空気感</span>
+      </div>
+    </div>
+  </div>
+  <div class="folio"><span><span class="full">GREEN通商 — AI SHARING SESSION</span><span class="short">GREEN通商</span></span><span>07 / 13</span></div>
+</section>
+
+<!-- ============================== 08 ============================== -->
+<section class="sec sec-08">
+  <p class="eyebrow reveal">08 — Templates</p>
+  <div class="stack">
+    <h2 class="h1 reveal">テンプレートを<br>たくさん作っています。</h2>
+    <h2 class="h1 demphasis reveal" style="--d:.1s">でも、<br>同じものを作るためじゃない。</h2>
+    <h2 class="h1 emphasis reveal" style="--d:.2s">その店らしいものを、<br>速く作るため。</h2>
+  </div>
+
+  <div class="compare">
+    <div class="compare-col a reveal" style="--d:.1s">
+      <span class="tag">一般的なテンプレート</span>
+      <p>誰でも同じものを速く作るためのもの。</p>
+    </div>
+    <div class="compare-col b reveal" style="--d:.2s">
+      <span class="tag">GREEN通商が作りたいもの</span>
+      <p>「その店らしい」「その商品らしい」を最初からAIに渡すためのテンプレート。AIに平均点を出させないための、スタート地点です。</p>
+    </div>
+  </div>
+  <div class="folio"><span><span class="full">GREEN通商 — AI SHARING SESSION</span><span class="short">GREEN通商</span></span><span>08 / 13</span></div>
+</section>
+
+<!-- ============================== 09 ============================== -->
+<section class="sec sec-09">
+  <p class="eyebrow reveal">09 — Keep Growing</p>
+  <h2 class="h1 reveal">完成したら、<br>終わりじゃない。</h2>
+  <p class="body-col reveal" style="--d:.1s">
+    過去のテンプレートは残す。新しいページを作るたびに、良かったこと・AIっぽくなったところ・指示が足りなかったところを見直す。
+  </p>
+
+  <div class="version-row reveal" style="--d:.15s">
+    <span class="v">v1</span><span class="arrow">→</span>
+    <span class="v">v2</span><span class="arrow">→</span>
+    <span class="v current">v3</span>
+  </div>
+
+  <div class="close reveal" style="--d:.05s">
+    <p class="h2">AIを育てるというより、</p>
+    <p class="kicker"><u>「私たちの基準」</u>を育てていく。</p>
+  </div>
+  <div class="folio"><span><span class="full">GREEN通商 — AI SHARING SESSION</span><span class="short">GREEN通商</span></span><span>09 / 13</span></div>
+</section>
+
+<!-- ============================== 10 ============================== -->
+<section class="sec sec-10">
+  <p class="eyebrow reveal">10 — What Matters</p>
+  <h2 class="quiet-head reveal">誰にも響かないものは、<br>いらない。</h2>
+
+  <div class="quiet-lines">
+    <p class="reveal" style="--d:.1s">AIだから作れる。</p>
+    <p class="reveal" style="--d:.2s">AIだから速い。</p>
+    <p class="reveal" style="--d:.3s">それだけでは意味がない。</p>
+  </div>
+
+  <p class="quiet-emph reveal" style="--d:.1s">「これ欲しい」「これ面白い」「なんか好き」</p>
+
+  <p class="quiet-final reveal" style="--d:.15s">
+    AIで作ることが目的ではなく、誰かの心が少し動くものを、今までより速く形にする。それがGREEN通商のAI活用です。
+  </p>
+  <div class="folio"><span><span class="full">GREEN通商 — AI SHARING SESSION</span><span class="short">GREEN通商</span></span><span>10 / 13</span></div>
+</section>
+
+<!-- ============================== 11 ============================== -->
+<section class="sec sec-11">
+  <p class="eyebrow reveal">11 — Building Now</p>
+  <h2 class="h1 reveal">今、<br>作りたいアプリが<br class="lb-sp">あります。</h2>
+
+  <p class="body-col reveal" style="--d:.1s">
+    AIの分析やデータ、数字は、正確かもしれない。
+  </p>
+  <p class="punch reveal" style="--d:.05s">
+    でも、<br>その裏側にある<br>物語は、<br>蓄積されない。
+  </p>
+
+  <p class="body-col reveal" style="--d:.15s">
+    だから今、日記のような、会社の温度がわかる入力アプリを開発中です。
+  </p>
+
+  <div class="kw-wrap reveal" style="--d:.2s">
+    <span class="kw">人の温度。</span>
+  </div>
+  <p class="close reveal" style="--d:.1s">
+    未来のために本当に必要なのは、<b>人の温度を組み合わせること</b>だと思っています。
+  </p>
+  <div class="folio"><span><span class="full">GREEN通商 — AI SHARING SESSION</span><span class="short">GREEN通商</span></span><span>11 / 13</span></div>
+</section>
+
+<!-- ============================== 12 ============================== -->
+<section class="sec sec-12">
+  <p class="eyebrow reveal">12 — Before the End</p>
+  <h2 class="pause-a reveal">AIに<br>仕事を任せたいんじゃない。</h2>
+  <h2 class="pause-b reveal" style="--d:.15s">私たちらしさを、<br>AIで加速させたい。</h2>
+  <div class="folio"><span><span class="full">GREEN通商 — AI SHARING SESSION</span><span class="short">GREEN通商</span></span><span>12 / 13</span></div>
+</section>
+
+<!-- ============================== 13 ============================== -->
+<section class="sec-13">
+
+  <div class="reveal-block reveal-a">
+    <p class="reveal">もちろん。</p>
+  </div>
+
+  <div class="reveal-block reveal-b sec--on-color">
+    <p class="big reveal">このページ</p>
+    <p class="allai reveal" style="--d:.25s">ALL AI</p>
+    <div class="folio"><span><span class="full">GREEN通商 — AI SHARING SESSION</span><span class="short">GREEN通商</span></span><span>13 / 13</span></div>
+  </div>
+
+  <div class="reveal-block reveal-c">
+    <p class="reveal">GREEN通商マインドを<br>スキルに入れて作成した、<br>完全AI企画でした。</p>
+  </div>
+
+  <div class="reveal-block colophon">
+    <p class="final reveal">AIで、平均点を取らない。</p>
+    <p class="brand reveal" style="--d:.15s">GREEN通商</p>
+  </div>
+
+</section>
+
+<script>
+(function(){
+  var progress = document.getElementById('progress');
+  function onScroll(){
+    var h = document.documentElement;
+    var scrolled = h.scrollTop;
+    var max = h.scrollHeight - h.clientHeight;
+    var pct = max > 0 ? (scrolled / max) * 100 : 0;
+    progress.style.width = pct + '%';
+  }
+  document.addEventListener('scroll', onScroll, { passive:true });
+  onScroll();
+
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var items = document.querySelectorAll('.reveal');
+  if(reduce || !('IntersectionObserver' in window)){
+    items.forEach(function(el){ el.classList.add('is-in'); });
+    return;
+  }
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(entry.isIntersecting){
+        entry.target.classList.add('is-in');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2, rootMargin: '0px 0px -8% 0px' });
+  items.forEach(function(el){ io.observe(el); });
+})();
+</script>
+
+</body>
+</html>
